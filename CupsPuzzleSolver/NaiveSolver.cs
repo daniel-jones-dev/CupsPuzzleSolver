@@ -15,6 +15,7 @@ namespace CupsPuzzleSolver
 
         public NaiveSolver(Cups start)
         {
+            start.CheckValid();
             _toExplore = new List<(Cups, int, Cups?)> {(start, 0, null)};
             _explored = new Dictionary<Cups, (int, Cups?)>();
         }
@@ -97,6 +98,7 @@ namespace CupsPuzzleSolver
                     // Console.WriteLine("Pouring cup " + from + " into cup " + to + ", resulting in:");
                     var nextState = (Cups) currState.Clone();
                     nextState.Move(from, to);
+                    nextState.CheckValid();
                     // nextState.PrintState();
                     _toExplore.Add((nextState, currMoves + 1, currState));
                 }
