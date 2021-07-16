@@ -47,7 +47,7 @@ namespace CupsPuzzleSolver
 
         public List<(int, int)> GetPossibleMoves()
         {
-            List<(int, int)> result = new List<(int, int)>();
+            var result = new List<(int, int)>();
             for (var i = 0; i < cups.Length; ++i)
             for (var j = 0; j < cups.Length; ++j)
                 if (i != j && cups[i].CanPourInto(cups[j]))
@@ -59,7 +59,47 @@ namespace CupsPuzzleSolver
         {
             cups[from].PourInto(cups[to]);
         }
-        
+
+        public void CheckValid()
+        {
+            var colorCount = new Dictionary<char, int>();
+            for (var i = 0; i < cups.Length; i++)
+            {
+                var cup = cups[i];
+                if (cup.Volume > Cup.MaxSize)
+                    throw new Exception("Cup " + i + " exceeds valid size (" + Cup.MaxSize + "), has size of " +
+                                        cup.Volume + ".");
+                for (var j = 0; j < cup.Volume; ++j)
+                {
+                    var color = cup.Color(j);
+                    if (!colorCount.ContainsKey(color)) colorCount.Add(color, 0);
+                    colorCount[color]++;
+                }
+            }
+
+            foreach (var (color, count) in colorCount)
+                if (count != Cup.MaxSize)
+                    throw new Exception("Color " + color + " has an invalid count of " + count + " (expected " +
+                                        Cup.MaxSize + ")");
+        }
+
+        public bool Solved()
+        {
+            foreach (var cup in cups)
+            {
+                switch (cup.NumTopColors())
+                {
+                    case 0:
+                    case Cup.MaxSize:
+                        continue;
+                    default:
+                        return false;
+                }
+            }
+
+            return true;
+        }
+
         public void PrintState()
         {
             Console.WriteLine(GetStateString());
@@ -68,10 +108,46 @@ namespace CupsPuzzleSolver
         public void PrintMoves()
         {
             var moves = GetPossibleMoves();
-            foreach ((var from, var to) in moves)
+            foreach (var (from, to) in moves) Console.WriteLine("Can pour cup " + from + " into cup " + to);
+        }
+    }
+
+    public class Solver
+    {
+        private readonly Cups state;
+        private int moveCount = 0;
+
+        public Solver(Cups start)
+        {
+            state = start;
+            state.PrintState();
+            state.CheckValid();
+        }
+
+        public bool Step()
+        {
+            if (state.Solved())
             {
-                Console.WriteLine("Can pour cup " + from + " into cup " + to);
+                Console.WriteLine("Solved with "+moveCount + " moves.");
+                return false;
             }
+            
+            var moves = state.GetPossibleMoves();
+            if (moves.Count > 0)
+            {
+                state.PrintMoves();
+                var from = moves[0].Item1;
+                var to = moves[0].Item2;
+                Console.WriteLine("Move " + moveCount + ": Pouring cup " + from + " into cup " + to);
+                state.Move(from, to);
+                moveCount++;
+                state.PrintState();
+                state.CheckValid();
+                return true;
+            }
+
+            Console.WriteLine("No possible moves left, took "+moveCount + " moves.");
+            return false;
         }
     }
 
@@ -80,19 +156,12 @@ namespace CupsPuzzleSolver
         private static void Main(string[] args)
         {
             string[] cupContents = {"", "POPO", "OPOP"};
-            
-            
-            
             var cups = new Cups(cupContents);
-            cups.PrintState();
-            cups.PrintMoves();
 
-            Console.WriteLine("Pouring cup 1 into cup 0");
-            cups.Move(1,0);
-            cups.PrintState();
-            cups.PrintMoves();
-            
-            
+            var solver = new Solver(cups);
+            while (solver.Step())
+            {
+            }
         }
     }
 }

@@ -57,7 +57,7 @@ namespace CupsPuzzleSolver
 
             var colorCount = NumTopColors();
             other._contents += new String(TopColor(), colorCount);
-            _contents = _contents.Trim(TopColor());
+            _contents = _contents.TrimEnd(TopColor());
         }
     }
 }
