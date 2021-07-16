@@ -57,7 +57,7 @@ namespace CupsPuzzleSolver
             if (!CanPourInto(other)) throw new Exception("Cannot pour this cup into other");
 
             var colorCount = NumTopColors();
-            other._contents += new String(TopColor(), colorCount);
+            other._contents += new string(TopColor(), colorCount);
             _contents = _contents.TrimEnd(TopColor());
         }
     }
