@@ -6,8 +6,6 @@ namespace CupsPuzzleSolver
     {
         public const int MaxSize = 4;
 
-        private string _contents = "";
-
         public Cup()
         {
         }
@@ -15,18 +13,18 @@ namespace CupsPuzzleSolver
         public Cup(string content)
         {
             if (content == "-") content = "";
-            _contents = content;
+            Content = content;
         }
 
-        public int Volume => _contents.Length;
+        public int Volume => Content.Length;
         public bool Empty => Volume == 0;
         public bool Full => Volume == MaxSize;
 
-        public string Content => _contents;
-        
+        public string Content { get; private set; } = "";
+
         public char Color(int index)
         {
-            return _contents[index];
+            return Content[index];
         }
 
         public char TopColor()
@@ -59,9 +57,9 @@ namespace CupsPuzzleSolver
             if (!CanPourInto(other)) throw new Exception("Cannot pour this cup into other");
 
             var colorCount = NumTopColors();
-            if (other.Volume + colorCount > Cup.MaxSize) colorCount = Cup.MaxSize - other.Volume;
-            other._contents += new string(TopColor(), colorCount);
-            _contents = _contents.TrimEnd(TopColor());
+            if (other.Volume + colorCount > MaxSize) colorCount = MaxSize - other.Volume;
+            other.Content += new string(TopColor(), colorCount);
+            Content = Content[..(Volume - colorCount)];
         }
     }
 }
