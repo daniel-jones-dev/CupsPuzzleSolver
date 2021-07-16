@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace CupsPuzzleSolver
 {
-    public class Cups
+    public class Cups : ICloneable
     {
         private readonly Cup[] cups;
 
@@ -21,6 +22,21 @@ namespace CupsPuzzleSolver
             : this(content.Split(','))
         {
         }
+
+        #region ICloneable Members
+
+        public object Clone()
+        {
+            string[] content = new string[cups.Length];
+            for (int i = 0; i < cups.Length; i++)
+            {
+                content[i] = cups[i].Content;
+            }
+
+            return new Cups(content);
+        }
+
+        #endregion
 
         public string GetStateString()
         {
@@ -52,6 +68,22 @@ namespace CupsPuzzleSolver
             }
 
             return result;
+        }
+
+        public override int GetHashCode()
+        {
+            return GetShortStateString().GetHashCode();
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (obj == null) return false;
+            return GetShortStateString() == ((Cups) obj).GetShortStateString();
+        }
+
+        public string GetShortStateString()
+        {
+            return String.Join(',',from cup in cups select cup.Content);
         }
 
         public List<(int, int)> GetPossibleMoves()

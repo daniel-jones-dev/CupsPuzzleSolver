@@ -22,6 +22,8 @@ namespace CupsPuzzleSolver
         public bool Empty => Volume == 0;
         public bool Full => Volume == MaxSize;
 
+        public string Content => _contents;
+        
         public char Color(int index)
         {
             return _contents[index];
