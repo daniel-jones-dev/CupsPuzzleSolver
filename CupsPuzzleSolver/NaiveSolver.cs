@@ -2,12 +2,12 @@ using System;
 
 namespace CupsPuzzleSolver
 {
-    public class Solver
+    public class NaiveSolver
     {
         private readonly Cups state;
-        private int moveCount = 0;
+        private int moveCount;
 
-        public Solver(Cups start)
+        public NaiveSolver(Cups start)
         {
             state = start;
             state.PrintState();
@@ -18,10 +18,10 @@ namespace CupsPuzzleSolver
         {
             if (state.Solved())
             {
-                Console.WriteLine("Solved with "+moveCount + " moves.");
+                Console.WriteLine("Solved with " + moveCount + " moves.");
                 return false;
             }
-            
+
             var moves = state.GetPossibleMoves();
             if (moves.Count > 0)
             {
@@ -36,7 +36,7 @@ namespace CupsPuzzleSolver
                 return true;
             }
 
-            Console.WriteLine("No possible moves left, took "+moveCount + " moves.");
+            Console.WriteLine("No possible moves left, took " + moveCount + " moves.");
             return false;
         }
     }

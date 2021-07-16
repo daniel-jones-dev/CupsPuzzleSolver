@@ -9,7 +9,7 @@
             
             var cups = new Cups(puzzle2);
 
-            var solver = new Solver(cups);
+            var solver = new NaiveSolver(cups);
             while (solver.Step())
             {
             }
