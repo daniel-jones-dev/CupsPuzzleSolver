@@ -46,8 +46,7 @@ namespace CupsPuzzleSolver
 
         public bool CanPourInto(Cup other)
         {
-            if (other.Full) return false;
-            if (Empty) return false;
+            if (other.Full || Empty || NumTopColors() == 4) return false;
             if (other.Empty) return true;
             return other.TopColor() == TopColor();
         }
