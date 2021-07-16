@@ -10,7 +10,16 @@ namespace CupsPuzzleSolver
         public Cups(string[] cupContents)
         {
             cups = new Cup[cupContents.Length];
-            for (var i = 0; i < cupContents.Length; ++i) cups[i] = new Cup(cupContents[i]);
+            for (var i = 0; i < cupContents.Length; ++i)
+            {
+                var cupContent = cupContents[i];
+                cups[i] = new Cup(cupContent);
+            }
+        }
+
+        public Cups(string content)
+            : this(content.Split(','))
+        {
         }
 
         public string GetStateString()
@@ -86,7 +95,6 @@ namespace CupsPuzzleSolver
         public bool Solved()
         {
             foreach (var cup in cups)
-            {
                 switch (cup.NumTopColors())
                 {
                     case 0:
@@ -95,7 +103,6 @@ namespace CupsPuzzleSolver
                     default:
                         return false;
                 }
-            }
 
             return true;
         }

@@ -14,6 +14,7 @@ namespace CupsPuzzleSolver
 
         public Cup(string content)
         {
+            if (content == "-") content = "";
             _contents = content;
         }
 
