@@ -28,10 +28,7 @@ namespace CupsPuzzleSolver
         public object Clone()
         {
             string[] content = new string[cups.Length];
-            for (int i = 0; i < cups.Length; i++)
-            {
-                content[i] = cups[i].Content;
-            }
+            for (var i = 0; i < cups.Length; i++) content[i] = cups[i].Content;
 
             return new Cups(content);
         }
@@ -83,7 +80,7 @@ namespace CupsPuzzleSolver
 
         public string GetShortStateString()
         {
-            return String.Join(',',from cup in cups select cup.Content);
+            return string.Join(',', from cup in cups orderby cup.Content select cup.Content);
         }
 
         public List<(int, int)> GetPossibleMoves()
