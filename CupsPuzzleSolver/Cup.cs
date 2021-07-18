@@ -44,6 +44,32 @@ namespace CupsPuzzleSolver
             return MaxSize;
         }
 
+        public string DistinctColors()
+        {
+            if (Empty) return "";
+            string result = new(Color(0), 1);
+            for (var i = 1; i < Volume; ++i)
+                if (Color(i) != result[^1])
+                    result += Color(i);
+
+            return result;
+        }
+
+        public int MovesToEmpty()
+        {
+            if (Empty) return 0;
+            var moves = 1;
+            var lastSeenColor = Color(0);
+            for (var i = 1; i < MaxSize; ++i)
+                if (Color(i) != lastSeenColor)
+                {
+                    lastSeenColor = Color(i);
+                    ++moves;
+                }
+
+            return moves;
+        }
+
         public bool CanPourInto(Cup other)
         {
             if (other.Full || Empty || NumTopColors() == 4) return false;

@@ -121,6 +121,22 @@ namespace CupsPuzzleSolver
                                         Cup.MaxSize + ")");
         }
 
+        public float EstimatedMoves()
+        {
+            // Estimate the number of moves to complete this state.
+            // The heuristic must be admissible (i.e. never overestimate) to guarantee the best solution will be found.
+
+            Dictionary<char, int> colorAppearances = new();
+            foreach (var cup in cups)
+            foreach (var color in cup.DistinctColors())
+                if (!colorAppearances.ContainsKey(color)) colorAppearances.Add(color, 1);
+                else colorAppearances[color]++;
+
+            var cost = 0.0F;
+            foreach (var (_, count) in colorAppearances) cost += count - 1;
+            return cost;
+        }
+
         public bool Solved()
         {
             foreach (var cup in cups)
