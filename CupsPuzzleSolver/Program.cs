@@ -27,7 +27,7 @@
 
             var cups = new Cups(puzzle15);
 
-            var solver = new NaiveSolver(cups);
+            var solver = new AStarSolver(cups);
             while (solver.Step())
             {
             }
