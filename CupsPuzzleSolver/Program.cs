@@ -25,7 +25,9 @@
             var puzzle14 = "BBPV,GGBB,OPVC,VCgO,VCgC,PGOP,OGgg,-,-";
             var puzzle15 = "CCVB,VrRG,RBRR,YCGY,YVrr,GrVB,BCGY,-,-";
 
-            var cups = new Cups(puzzle15);
+            var puzzle16 = "YgOO,<YCPC,rrCP,<grgP|OgOY,CPYr,-,-";
+            
+            var cups = new Cups(puzzle16);
 
             var solver = new AStarSolver(cups);
             while (solver.Step())

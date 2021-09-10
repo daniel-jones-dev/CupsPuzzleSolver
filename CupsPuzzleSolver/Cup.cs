@@ -12,8 +12,33 @@ namespace CupsPuzzleSolver
 
         public Cup(string content)
         {
+            if (content.StartsWith("<"))
+            {
+                HasTap = true;
+                content = content.Substring(1);
+            }
+            else
+            {
+                HasTap = false;
+            }
+
+            if (content.EndsWith(")"))
+            {
+                HasLid = true;
+                content = content.Substring(0, content.Length - 1);
+            }
+            else
+            {
+                HasLid = false;
+            }
+
             if (content == "-") content = "";
             Content = content;
+        }
+        
+        public override string ToString()
+        {
+            return (HasTap ? "<" : "") + Content + (HasLid ? ")" : "");
         }
 
         public int Volume => Content.Length;
@@ -22,16 +47,35 @@ namespace CupsPuzzleSolver
 
         public string Content { get; private set; } = "";
 
+        public bool HasTap { get; set; }
+
+        public bool HasLid { get; set; }
+
         public char Color(int index)
         {
             return Content[index];
         }
 
+        public char BottomColor()
+        {
+            if (Volume == 0) throw new Exception("Cup is empty");
+            return Color(0);
+        }
+
         public char TopColor()
         {
             if (Volume == 0) throw new Exception("Cup is empty");
-
             return Color(Volume - 1);
+        }
+
+        public int NumBottomColors()
+        {
+            if (Empty) return 0;
+            for (var i = 1; i < MaxSize; ++i)
+                if (Volume <= i || Color(i) != BottomColor())
+                    return i;
+
+            return MaxSize;
         }
 
         public int NumTopColors()
@@ -70,21 +114,32 @@ namespace CupsPuzzleSolver
             return moves;
         }
 
-        public bool CanPourInto(Cup other)
+        public bool CanPourInto(Cup other, bool tap = false)
         {
-            if (other.Full || Empty || NumTopColors() == 4) return false;
+            if (other.HasLid || other.Full || Empty || NumTopColors() == 4) return false;
             if (other.Empty) return true;
-            return other.TopColor() == TopColor();
+            if (tap)
+                return other.TopColor() == BottomColor();
+            else
+                return other.TopColor() == TopColor();
         }
 
-        public void PourInto(Cup other)
+        public void PourInto(Cup other, bool tap = false)
         {
-            if (!CanPourInto(other)) throw new Exception("Cannot pour this cup into other");
+            if (!CanPourInto(other, tap: tap)) throw new Exception("Cannot pour this cup into other");
 
-            var colorCount = NumTopColors();
+            var colorCount = tap ? NumBottomColors() : NumTopColors();
             if (other.Volume + colorCount > MaxSize) colorCount = MaxSize - other.Volume;
-            other.Content += new string(TopColor(), colorCount);
-            Content = Content[..(Volume - colorCount)];
+            var moveColor = tap ? BottomColor() : TopColor();
+            other.Content += new string(moveColor, colorCount);
+            if (tap)
+            {
+                Content = Content[colorCount..];
+            }
+            else
+            {
+                Content = Content[..(Volume - colorCount)];
+            }
         }
     }
 }

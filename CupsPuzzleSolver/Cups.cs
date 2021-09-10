@@ -4,64 +4,90 @@ using System.Linq;
 
 namespace CupsPuzzleSolver
 {
-    public class Cups : ICloneable
+    public class Cups : ICloneable // TODO rename to CupPuzzle
     {
-        private readonly Cup[] cups;
-
-        public Cups(string[] cupContents)
-        {
-            cups = new Cup[cupContents.Length];
-            for (var i = 0; i < cupContents.Length; ++i)
-            {
-                var cupContent = cupContents[i];
-                cups[i] = new Cup(cupContent);
-            }
-        }
+        private readonly List<Cup[]> _cupRows;
 
         public Cups(string content)
-            : this(content.Split(','))
         {
+            _cupRows = new List<Cup[]>();
+            var rowsContent = content.Split('|');
+            var numRows = rowsContent.Length;
+            foreach (var rowContent in rowsContent)
+            {
+                var cupContents = rowContent.Split(',');
+                var cupRow = new Cup[cupContents.Length];
+                for (var i = 0; i < cupContents.Length; ++i)
+                {
+                    var cupContent = cupContents[i];
+                    cupRow[i] = new Cup(cupContent);
+                }
+
+                _cupRows.Add(cupRow);
+            }
+            // TODO check taps are valid, and do not clash with lids
         }
 
         #region ICloneable Members
 
         public object Clone()
         {
-            string[] content = new string[cups.Length];
-            for (var i = 0; i < cups.Length; i++) content[i] = cups[i].Content;
-
-            return new Cups(content);
+            return new Cups(ToString());
         }
 
         #endregion
+
+        public override string ToString()
+        {
+            return string.Join("|",
+                from cupRow in _cupRows select (string.Join(",", from cup in cupRow select cup.ToString())));
+        }
 
         public string GetStateString()
         {
             var result = "";
 
-            for (var cupIndex = 0; cupIndex < cups.Length; ++cupIndex)
+            for (var rowIdx = 0; rowIdx < _cupRows.Count; rowIdx++)
             {
-                result += " " + cupIndex + " ";
-                result += cupIndex + 1 < cups.Length ? " " : "\n";
-            }
+                var cupRow = _cupRows[rowIdx];
+                if (rowIdx > 0) result += "\n";
 
-            for (var withinCupIndex = Cup.MaxSize - 1; withinCupIndex >= 0; --withinCupIndex)
-            for (var cupIndex = 0; cupIndex < cups.Length; ++cupIndex)
-            {
-                result += "|";
-                if (cups[cupIndex].Volume > withinCupIndex)
-                    result += cups[cupIndex].Color(withinCupIndex);
-                else
-                    result += " ";
-                result += "|";
+                // Index number
+                for (var cupIndex = 0; cupIndex < cupRow.Length; ++cupIndex)
+                {
+                    result += " " + cupIndex + " ";
+                    result += (cupIndex + 1 < cupRow.Length) ? " " : "\n";
+                }
 
-                result += cupIndex + 1 < cups.Length ? " " : "\n";
-            }
+                // Lids
+                for (var cupIndex = 0; cupIndex < cupRow.Length; ++cupIndex)
+                {
+                    var cup = cupRow[cupIndex];
+                    result += " " + (cup.HasLid || (cup.NumTopColors() == Cup.MaxSize) ? "_" : " ") + " ";
+                    result += (cupIndex + 1 < cupRow.Length) ? " " : "\n";
+                }
 
-            for (var cupIndex = 0; cupIndex < cups.Length; ++cupIndex)
-            {
-                result += " ‾ ";
-                result += cupIndex + 1 < cups.Length ? " " : "\n";
+                // Cup contents
+                for (var withinCupIndex = Cup.MaxSize - 1; withinCupIndex >= 0; --withinCupIndex)
+                for (var cupIndex = 0; cupIndex < cupRow.Length; ++cupIndex)
+                {
+                    result += "|";
+                    if (cupRow[cupIndex].Volume > withinCupIndex)
+                        result += cupRow[cupIndex].Color(withinCupIndex);
+                    else
+                        result += " ";
+                    result += "|";
+
+                    result += cupIndex + 1 < cupRow.Length ? " " : "\n";
+                }
+
+                // Base or tap
+                for (var cupIndex = 0; cupIndex < cupRow.Length; ++cupIndex)
+                {
+                    var cup = cupRow[cupIndex];
+                    result += " " + (cup.HasTap ? "v" : "‾") + " ";
+                    result += cupIndex + 1 < cupRow.Length ? " " : "";
+                }
             }
 
             return result;
@@ -80,38 +106,75 @@ namespace CupsPuzzleSolver
 
         public string GetShortStateString()
         {
-            return string.Join(',', from cup in cups orderby cup.Content select cup.Content);
+            // TODO needs to be updated to reflect that cups with taps or lids are not interchangeable
+            return ToString();
+            //return string.Join(',', from cup in cupRows select cup.Content);
         }
 
-        public List<(int, int)> GetPossibleMoves()
+        public List<Move> GetPossibleMoves()
         {
-            var result = new List<(int, int)>();
-            for (var i = 0; i < cups.Length; ++i)
-            for (var j = 0; j < cups.Length; ++j)
-                if (i != j && cups[i].CanPourInto(cups[j]))
-                    result.Add((i, j));
-            return result;
+            var possibleMoves = new List<Move>();
+            for (var fromRow = 0; fromRow < _cupRows.Count; ++fromRow)
+            for (var fromCupIndex = 0; fromCupIndex < _cupRows[fromRow].Length; ++fromCupIndex)
+            {
+                var fromCup = _cupRows[fromRow][fromCupIndex];
+                if (fromCup.HasTap)
+                {
+                    var toCup = _cupRows[fromRow + 1][fromCupIndex];
+                    if (fromCup.CanPourInto(toCup, tap: true))
+                        possibleMoves.Add(new Move {FromCupIndex = fromCupIndex, FromRowIndex = fromRow, Tap = true});
+                }
+
+                for (var toRow = 0; toRow < _cupRows.Count; ++toRow)
+                for (var toCupIndex = 0; toCupIndex < _cupRows[toRow].Length; ++toCupIndex)
+                {
+                    var toCup = _cupRows[toRow][toCupIndex];
+                    if ((fromRow != toRow || fromCupIndex != toCupIndex) && fromCup.CanPourInto(toCup))
+                    {
+                        possibleMoves.Add(new Move
+                        {
+                            FromCupIndex = fromCupIndex, FromRowIndex = fromRow, Tap = false, ToCupIndex = toCupIndex,
+                            ToRowIndex = toRow
+                        });
+                    }
+                }
+            }
+
+            return possibleMoves;
         }
 
-        public void Move(int from, int to)
+        public void Move(Move move)
         {
-            cups[from].PourInto(cups[to]);
+            var fromCup = _cupRows[move.FromRowIndex][move.FromCupIndex];
+            if (move.Tap)
+            {
+                // TODO                
+            }
+            else
+            {
+                var toCup = _cupRows[move.ToRowIndex][move.ToCupIndex];
+                fromCup.PourInto(toCup);
+            }
         }
 
         public void CheckValid()
         {
             var colorCount = new Dictionary<char, int>();
-            for (var i = 0; i < cups.Length; i++)
+            for (var rowIdx = 0; rowIdx < _cupRows.Count; rowIdx++)
             {
-                var cup = cups[i];
-                if (cup.Volume > Cup.MaxSize)
-                    throw new Exception("Cup " + i + " exceeds valid size (" + Cup.MaxSize + "), has size of " +
-                                        cup.Volume + ".");
-                for (var j = 0; j < cup.Volume; ++j)
+                var cupRow = _cupRows[rowIdx];
+                for (var cupIdx = 0; cupIdx < cupRow.Length; ++cupIdx)
                 {
-                    var color = cup.Color(j);
-                    if (!colorCount.ContainsKey(color)) colorCount.Add(color, 0);
-                    colorCount[color]++;
+                    var cup = cupRow[cupIdx];
+                    if (cup.Volume > Cup.MaxSize)
+                        throw new Exception(
+                            $"Cup (row {rowIdx}, cup{cupIdx}) exceeds valid size ({Cup.MaxSize}), has size of {cup.Volume}.");
+                    for (var colorIdx = 0; colorIdx < cup.Volume; ++colorIdx)
+                    {
+                        var color = cup.Color(colorIdx);
+                        if (!colorCount.ContainsKey(color)) colorCount.Add(color, 0);
+                        colorCount[color]++;
+                    }
                 }
             }
 
@@ -127,7 +190,8 @@ namespace CupsPuzzleSolver
             // The heuristic must be admissible (i.e. never overestimate) to guarantee the best solution will be found.
 
             Dictionary<char, int> colorAppearances = new();
-            foreach (var cup in cups)
+            foreach (var cupRow in _cupRows)
+            foreach (var cup in cupRow)
             foreach (var color in cup.DistinctColors())
                 if (!colorAppearances.ContainsKey(color)) colorAppearances.Add(color, 1);
                 else colorAppearances[color]++;
@@ -139,7 +203,8 @@ namespace CupsPuzzleSolver
 
         public bool Solved()
         {
-            foreach (var cup in cups)
+            foreach (var cupRow in _cupRows)
+            foreach (var cup in cupRow)
                 switch (cup.NumTopColors())
                 {
                     case 0:
@@ -160,7 +225,19 @@ namespace CupsPuzzleSolver
         public void PrintMoves()
         {
             var moves = GetPossibleMoves();
-            foreach (var (from, to) in moves) Console.WriteLine("Can pour cup " + from + " into cup " + to);
+            foreach (var move in moves)
+            {
+                if (move.Tap)
+                {
+                    Console.WriteLine($"Can tap cup {move.FromCupIndex} in row {move.FromRowIndex}");
+                }
+                else
+                {
+                    Console.WriteLine(
+                        $"Can pour cup {move.FromCupIndex} in row {move.FromRowIndex} into " +
+                        $"cup {move.ToCupIndex} in row {move.ToRowIndex}");
+                }
+            }
         }
     }
 }

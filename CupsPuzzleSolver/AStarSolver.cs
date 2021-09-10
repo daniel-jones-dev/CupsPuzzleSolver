@@ -14,8 +14,8 @@ namespace CupsPuzzleSolver
 
     public class AStarSolver
     {
-        // Store collection, foreach state: g (moves to reach), f (g + heuristic), and the previous state
-        private readonly Dictionary<Cups, (int g, float f, Cups? prev)> _explored;
+        // Store collection, foreach state: g (moves to reach), f (g + heuristic), previous state, and move to reach
+        private readonly Dictionary<Cups, (int g, float f, Cups? prev, Move? move)> _explored;
 
         // Queue of states to be visited
         private readonly IntervalHeap<(float f, Cups state)> _openSet;
@@ -26,7 +26,7 @@ namespace CupsPuzzleSolver
         {
             start.CheckValid();
             var h = start.EstimatedMoves();
-            _explored = new Dictionary<Cups, (int, float, Cups?)> {{start, (0, h, null)}};
+            _explored = new Dictionary<Cups, (int, float, Cups?, Move?)> {{start, (0, h, null, null)}};
             _openSet = new IntervalHeap<(float, Cups)>(new StateCostComparer()) {(h, start)};
         }
 
@@ -41,7 +41,7 @@ namespace CupsPuzzleSolver
 
             var (f, currState) = _openSet.FindMin();
             _openSet.DeleteMin();
-            var (currMoves, _, _) = _explored[currState];
+            var (currMoves, _, _, _) = _explored[currState];
 
             // Console.WriteLine("==============================================");
             // Console.WriteLine("Checking state: (f: " + f + ")");
@@ -63,18 +63,18 @@ namespace CupsPuzzleSolver
                 // Enumerate possible moves from this state, and add them all to the to-explore list
                 var moveList = currState.GetPossibleMoves();
                 // Console.WriteLine(moveList.Count + " possible moves");
-                foreach (var (from, to) in moveList)
+                foreach (var move in moveList)
                 {
                     // Console.WriteLine("Pouring cup " + from + " into cup " + to + ", resulting in:");
                     var nextState = (Cups) currState.Clone();
-                    nextState.Move(from, to);
+                    nextState.Move(move);
                     nextState.CheckValid();
                     // nextState.PrintState();
                     var g = currMoves + 1;
 
-                    if (_explored.TryGetValue(nextState, out (int, float, Cups?) existingEntry))
+                    if (_explored.TryGetValue(nextState, out (int, float, Cups?, Move?) existingEntry))
                     {
-                        var (existingEntryMoves, _, existingEntryPrev) = existingEntry;
+                        var (existingEntryMoves, _, existingEntryPrev, _) = existingEntry;
                         if (g >= existingEntryMoves) continue;
                         // Console.WriteLine("Improving cost of an explored state (was: " + existingEntryMoves +
                         //                   ", now: " + g + "), found from:");
@@ -86,7 +86,7 @@ namespace CupsPuzzleSolver
                     var nextH = nextState.EstimatedMoves();
                     var nextF = g + nextH;
                     // Console.WriteLine("g: " + g + ", h: " + nextH + ", f: " + nextF);
-                    _explored.Add(nextState, (g, nextF, currState));
+                    _explored.Add(nextState, (g, nextF, currState, move));
                     _openSet.Add((nextF, nextState));
                 }
             }
@@ -104,19 +104,26 @@ namespace CupsPuzzleSolver
             }
 
             var currState = solvedState;
-            List<Cups> solution = new();
+            List< (Cups, Move?)> solution = new();
 
+            Move? lastMove = null;
+            
             while (true)
             {
-                solution.Insert(0, currState);
-                var (moves, f, prevState) = _explored[currState];
+                solution.Insert(0, (currState, lastMove));
+                var (moves, f, prevState, move) = _explored[currState];
+                lastMove = move;
 
                 if (prevState == null) break;
                 currState = prevState;
             }
 
             Console.WriteLine(solution.Count - 1 + " moves in solution");
-            foreach (var state in solution) state.PrintState();
+            foreach (var (state, move) in solution)
+            {
+                state.PrintState();
+                if (move != null) Console.WriteLine(move);
+            }
         }
     }
 }

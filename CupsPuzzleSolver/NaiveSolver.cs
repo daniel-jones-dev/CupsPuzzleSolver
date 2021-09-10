@@ -93,11 +93,11 @@ namespace CupsPuzzleSolver
                 // Enumerate possible moves from this state, and add them all to the to-explore list
                 var moveList = currState.GetPossibleMoves();
                 // Console.WriteLine(moveList.Count + " possible moves");
-                foreach (var (from, to) in moveList)
+                foreach (var move in moveList)
                 {
                     // Console.WriteLine("Pouring cup " + from + " into cup " + to + ", resulting in:");
                     var nextState = (Cups) currState.Clone();
-                    nextState.Move(from, to);
+                    nextState.Move(move);
                     nextState.CheckValid();
                     // nextState.PrintState();
                     _toExplore.Add((nextState, currMoves + 1, currState));
